@@ -1,4 +1,12 @@
 import pandas as pd
+import numpy as np
+
+from sklearn.metrics import (
+    mean_absolute_error,
+    mean_squared_error,
+    r2_score
+)
+
 
 from sklearn.metrics import mean_absolute_error
 from lightgbm import LGBMRegressor
@@ -140,18 +148,117 @@ xgboost_mae = mean_absolute_error(
     xgboost_pred
 )
 
+# ==========================================
+# 8 평가 함수
+# ==========================================
 
-# =========================
-# 8. 성능 비교
-# =========================
+def evaluate_model(model_name, dataset_name, y_true, y_pred):
+    mae = mean_absolute_error(y_true, y_pred)
+    mse = mean_squared_error(y_true, y_pred)
+    rmse = np.sqrt(mse)
+    r2 = r2_score(y_true, y_pred)
 
-print("\n======================")
-print("모델 성능 비교 (MAE)")
-print("======================")
+    return {
+        "Model": model_name,
+        "Dataset": dataset_name,
+        "MAE": round(mae, 3),
+        "MSE": round(mse, 3),
+        "RMSE": round(rmse, 3),
+        "R2": round(r2, 3)
+    }
 
-print(f"최근 7일 평균 : {baseline_mae:.2f} 인분")
-print(f"LightGBM     : {lightgbm_mae:.2f} 인분")
-print(f"XGBoost      : {xgboost_mae:.2f} 인분")
+
+# ==========================================
+# 각 모델의 Train / Test 예측
+# ==========================================
+
+# 최근 7일 평균 Baseline
+baseline_train_pred = train_df["sales_rolling_7"].values
+baseline_test_pred = test_df["sales_rolling_7"].values
+
+# LightGBM
+lgb_train_pred = lightgbm_model.predict(X_train)
+lgb_test_pred = lightgbm_model.predict(X_test)
+
+# XGBoost
+xgb_train_pred = xgboost_model.predict(X_train)
+xgb_test_pred = xgboost_model.predict(X_test)
+
+
+# ==========================================
+# 성능 평가
+# ==========================================
+
+evaluation_results = []
+
+evaluation_results.append(
+    evaluate_model(
+        "7-day Average",
+        "Train",
+        y_train,
+        baseline_train_pred
+    )
+)
+
+evaluation_results.append(
+    evaluate_model(
+        "7-day Average",
+        "Test",
+        y_test,
+        baseline_test_pred
+    )
+)
+
+evaluation_results.append(
+    evaluate_model(
+        "XGBoost",
+        "Train",
+        y_train,
+        xgb_train_pred
+    )
+)
+
+evaluation_results.append(
+    evaluate_model(
+        "XGBoost",
+        "Test",
+        y_test,
+        xgb_test_pred
+    )
+)
+
+evaluation_results.append(
+    evaluate_model(
+        "LightGBM",
+        "Train",
+        y_train,
+        lgb_train_pred
+    )
+)
+
+evaluation_results.append(
+    evaluate_model(
+        "LightGBM",
+        "Test",
+        y_test,
+        lgb_test_pred
+    )
+)
+
+
+# ==========================================
+# 결과 출력
+# ==========================================
+
+evaluation_df = pd.DataFrame(evaluation_results)
+
+print("\n==============================")
+print("모델 성능 비교")
+print("==============================")
+print(evaluation_df.to_string(index=False))
+
+
+
 
 
 # =========================
