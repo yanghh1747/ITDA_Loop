@@ -1,5 +1,8 @@
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
+
+
 
 from sklearn.metrics import (
     mean_absolute_error,
@@ -318,3 +321,271 @@ print("LightGBM 변수 중요도 TOP 15")
 print("======================")
 
 print(importance.head(15))
+
+# =========================
+# 11. 실제값 vs 예측값 논문 스타일 시각화
+# =========================
+
+import matplotlib.pyplot as plt
+import numpy as np
+from sklearn.metrics import r2_score
+
+
+# Train 예측
+baseline_train_pred = train_df["sales_rolling_7"].values
+lightgbm_train_pred = lightgbm_model.predict(X_train)
+xgboost_train_pred = xgboost_model.predict(X_train)
+
+# Test 예측
+baseline_test_pred = baseline_pred.values
+lightgbm_test_pred = lightgbm_pred
+xgboost_test_pred = xgboost_pred
+
+
+# =========================
+# 색상
+# =========================
+
+train_color = "#72C9AD"   # 민트
+test_color = "#F28E6B"    # 주황
+
+
+# =========================
+# 그래프 1개 그리는 함수
+# =========================
+
+def draw_scatter(
+    ax,
+    title,
+    y_train,
+    train_pred,
+    y_test,
+    test_pred
+):
+
+    # R2 계산
+    train_r2 = r2_score(y_train, train_pred)
+    test_r2 = r2_score(y_test, test_pred)
+
+    # 전체 범위 계산
+    min_value = min(
+        y_train.min(),
+        y_test.min(),
+        train_pred.min(),
+        test_pred.min()
+    )
+
+    max_value = max(
+        y_train.max(),
+        y_test.max(),
+        train_pred.max(),
+        test_pred.max()
+    )
+
+    # 약간의 여백
+    padding = 3
+    plot_min = max(0, min_value - padding)
+    plot_max = max_value + padding
+
+    # =========================
+    # Train
+    # =========================
+
+    ax.scatter(
+        y_train,
+        train_pred,
+        s=45,
+        color=train_color,
+        edgecolor="dimgray",
+        linewidth=0.7,
+        alpha=0.75,
+        label="Train data"
+    )
+
+    # =========================
+    # Test
+    # =========================
+
+    ax.scatter(
+        y_test,
+        test_pred,
+        s=45,
+        color=test_color,
+        edgecolor="dimgray",
+        linewidth=0.7,
+        alpha=0.75,
+        label="Test data"
+    )
+
+    # =========================
+    # y = x 기준선
+    # =========================
+
+    ax.plot(
+        [plot_min, plot_max],
+        [plot_min, plot_max],
+        color="black",
+        linestyle="--",
+        linewidth=1.5,
+        label="y=x"
+    )
+
+    # =========================
+    # 축
+    # =========================
+
+    ax.set_xlim(plot_min, plot_max)
+    ax.set_ylim(plot_min, plot_max)
+
+    ax.set_xlabel(
+        "Actual sales (servings)",
+        fontsize=10,
+        fontweight="bold"
+    )
+
+    ax.set_ylabel(
+        "Predicted sales (servings)",
+        fontsize=10,
+        fontweight="bold"  
+    )
+
+    # 제목
+    ax.set_title(
+        title,
+        fontsize=11,
+        pad=10,
+        fontweight="bold"
+    )
+
+    # =========================
+    # Grid
+    # =========================
+
+    ax.grid(
+        True,
+        linestyle="--",
+        linewidth=0.8,
+        alpha=0.5
+    )
+
+    # =========================
+    # 테두리
+    # =========================
+
+    for spine in ax.spines.values():
+        spine.set_linewidth(1.2)
+        spine.set_color("black")
+
+    # =========================
+    # R2 표시
+    # =========================
+
+    ax.text(
+        0.96,
+        0.16,
+        f"Train R²={train_r2:.2f}",
+        transform=ax.transAxes,
+        ha="right",
+        va="center",
+        color=train_color,
+        fontsize=10,
+        fontweight="bold"
+    )
+
+    ax.text(
+        0.96,
+        0.08,
+        f"Test R²={test_r2:.2f}",
+        transform=ax.transAxes,
+        ha="right",
+        va="center",
+        color=test_color,
+        fontsize=10,
+        fontweight="bold"
+    )
+
+    # 범례
+    ax.legend(
+        loc="upper left",
+        fontsize=8,
+        frameon=True
+    )
+
+    # 축 숫자
+    ax.tick_params(
+        axis="both",
+        labelsize=9
+    )
+
+
+# =========================
+# 3개 그래프 생성
+# =========================
+
+fig, axes = plt.subplots(
+    1,
+    3,
+    figsize=(15, 5)
+)
+
+fig.patch.set_facecolor("white")
+
+
+# (a) 7-day Average
+draw_scatter(
+    axes[0],
+    "(a) 7-day Average",
+    y_train,
+    baseline_train_pred,
+    y_test,
+    baseline_test_pred
+)
+
+
+# (b) XGBoost
+draw_scatter(
+    axes[1],
+    "(b) XGBoost",
+    y_train,
+    xgboost_train_pred,
+    y_test,
+    xgboost_test_pred
+)
+
+
+# (c) LightGBM
+draw_scatter(
+    axes[2],
+    "(c) LightGBM",
+    y_train,
+    lightgbm_train_pred,
+    y_test,
+    lightgbm_test_pred
+)
+
+
+# =========================
+# 간격 조절
+# =========================
+
+plt.subplots_adjust(
+    left=0.07,
+    right=0.98,
+    top=0.88,
+    bottom=0.15,
+    wspace=0.30
+)
+
+
+# =========================
+# 저장
+# =========================
+
+plt.savefig(
+    "data/actual_vs_predicted_paper_style.png",
+    dpi=300,
+    bbox_inches="tight",
+    facecolor="white"
+)
+
+plt.show()
