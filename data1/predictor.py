@@ -11,6 +11,15 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # 1. 모델 불러오기
 # ==========================================
 
+MENU_DISPLAY_NAMES = {
+    "김치찌개": "돼지김치찌개",
+    "제육볶음": "제육볶음",
+    "된장찌개": "호박된장국",
+    "냉면": "버섯소불고기"
+}
+
+
+
 model_package = joblib.load(
     BASE_DIR / "models" / "demand_model.joblib"
 )
@@ -313,7 +322,10 @@ def predict_demand(
         results.append({
 
             "menu":
-                menu,
+                MENU_DISPLAY_NAMES.get(
+                    menu,
+                    menu
+                ),
 
             "predicted_servings":
                 predicted_servings,
