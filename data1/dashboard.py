@@ -1,11 +1,6 @@
 # data1/dashboard.py
 
-MENU_DISPLAY_NAMES = {
-    "김치찌개": "돼지김치찌개",
-    "제육볶음": "제육볶음",
-    "된장찌개": "호박된장국",
-    "냉면": "버섯소불고기"
-}
+
 
 
 def build_dashboard(predictions, current_sales):
@@ -14,13 +9,8 @@ def build_dashboard(predictions, current_sales):
     for item in predictions:
 
         # AI 모델 내부 메뉴명
-        original_menu = item["menu"]
+        display_menu = item["menu"]
 
-        # 화면에 보여줄 메뉴명
-        display_menu = MENU_DISPLAY_NAMES.get(
-            original_menu,
-            original_menu
-        )
 
         predicted = item["predicted_servings"]
         recommended = item["recommended_servings"]
